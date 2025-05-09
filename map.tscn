@@ -88,3 +88,19 @@ valid_south_connection = Array[int]([1])
 valid_west_connection = Array[int]([0])
 valid_east_connection = Array[int]([0])
 metadata/_custom_type_script = "uid://bkj67xypp8cq1"
+
+[node name="WaveNode2D" type="Node2D" parent="WaveFunction2D/WaveNode"]
+script = ExtResource("4_p5pve")
+metadata/_custom_type_script = "uid://bkj67xypp8cq1"
+
+[node name="WaveNode2D2" type="Node2D" parent="WaveFunction2D/WaveNode"]
+script = ExtResource("4_p5pve")
+metadata/_custom_type_script = "uid://bkj67xypp8cq1"
+
+[node name="WaveNode2D3" type="Node2D" parent="WaveFunction2D/WaveNode"]
+script = ExtResource("4_p5pve")
+metadata/_custom_type_script = "uid://bkj67xypp8cq1"
+
+[node name="WaveNode2D4" type="Node2D" parent="WaveFunction2D/WaveNode"]
+script = ExtResource("4_p5pve")
+metadata/_custom_type_script = "uid://bkj67xypp8cq1"

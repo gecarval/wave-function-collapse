@@ -33,32 +33,33 @@ func set_wave_node(pos: Vector2i, new_wave_node: WaveNode2D) -> bool:
 	return true
 
 
-func west_connection(node: WaveNode2D) -> Array[Vector3i]:
-	return get_possible_connections(node,
-		func(n, c): return n.is_valid_east_connection(c),
-		func(n, c): return n.is_valid_west_connection(c))
+func west_connection(new_node: WaveNode2D) -> Array[Vector3i]:
+	return get_possible_connections(new_node,
+		func(node, connection): return node.is_valid_east_connection(connection),
+		func(node, connection): return node.is_valid_west_connection(connection))
 
 
-func east_connection(node: WaveNode2D) -> Array[Vector3i]:
-	return get_possible_connections(node,
-		func(n, c): return n.is_valid_west_connection(c),
-		func(n, c): return n.is_valid_east_connection(c))
+func east_connection(new_node: WaveNode2D) -> Array[Vector3i]:
+	return get_possible_connections(new_node,
+		func(node, connection): return node.is_valid_west_connection(connection),
+		func(node, connection): return node.is_valid_east_connection(connection))
 
 
-func north_connection(node: WaveNode2D) -> Array[Vector3i]:
-	return get_possible_connections(node,
-		func(n, c): return n.is_valid_south_connection(c),
-		func(n, c): return n.is_valid_north_connection(c))
+func north_connection(new_node: WaveNode2D) -> Array[Vector3i]:
+	return get_possible_connections(new_node,
+		func(node, connection): return node.is_valid_south_connection(connection),
+		func(node, connection): return node.is_valid_north_connection(connection))
 
 
-func south_connection(node: WaveNode2D) -> Array[Vector3i]:
-	return get_possible_connections(node,
-		func(n, c): return n.is_valid_north_connection(c),
-		func(n, c): return n.is_valid_south_connection(c))
+func south_connection(new_node: WaveNode2D) -> Array[Vector3i]:
+	return get_possible_connections(new_node,
+		func(node, connection): return node.is_valid_north_connection(connection),
+		func(node, connection): return node.is_valid_south_connection(connection))
 
 
 func get_possible_connections(
-		node: WaveNode2D, is_valid_connection_func: Callable,
+		node: WaveNode2D,
+		is_valid_connection_func: Callable,
 		is_valid_opposite_func: Callable
 ) -> Array[Vector3i]:
 	var possible_nodes: Array[Vector3i] = []
