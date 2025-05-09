@@ -4,7 +4,7 @@ class_name WaveFunction2D extends Node2D
 @export var source_id: int = 0
 @export var alternative_tile: int = 0
 @export var tile_map_layer: TileMapLayer
-@export var map_size: Vector2i = Vector2i(4, 4)
+@export var map_size: Vector2i = Vector2i(32, 32)
 @export var wave_node_array: Array[WaveNode2D]
 @export var possible_connections: Array[int]
 

@@ -1,7 +1,6 @@
-[gd_scene load_steps=7 format=3 uid="uid://du1c8m8dhr4ep"]
+[gd_scene load_steps=6 format=3 uid="uid://du1c8m8dhr4ep"]
 
 [ext_resource type="Texture2D" uid="uid://dgbj8ge3g0mti" path="res://Assets/Tilemap/Style F/tilemap_packed.png" id="1_wijl4"]
-[ext_resource type="Script" uid="uid://dki8isqg5123k" path="res://Script/tile_map_layer.gd" id="2_e0an3"]
 [ext_resource type="Script" uid="uid://cjqx1o2nxh7cq" path="res://Script/Classes/WaveFunction2D.gd" id="3_e0an3"]
 [ext_resource type="Script" uid="uid://bkj67xypp8cq1" path="res://Script/Classes/WaveNode2D.gd" id="4_p5pve"]
 
@@ -45,14 +44,12 @@ sources/0 = SubResource("TileSetAtlasSource_p5pve")
 [node name="WaveFunction2D" type="Node2D" parent="." node_paths=PackedStringArray("tile_map_layer", "wave_node_array")]
 script = ExtResource("3_e0an3")
 tile_map_layer = NodePath("TileMapLayer")
-map_size = Vector2i(8, 8)
 wave_node_array = [NodePath("WaveNode/Ground"), NodePath("WaveNode/HorizontalStreet"), NodePath("WaveNode/Curve"), NodePath("WaveNode/VerticalStreet")]
 possible_connections = Array[int]([0, 1])
 metadata/_custom_type_script = "uid://cjqx1o2nxh7cq"
 
 [node name="TileMapLayer" type="TileMapLayer" parent="WaveFunction2D"]
 tile_set = SubResource("TileSet_urblq")
-script = ExtResource("2_e0an3")
 
 [node name="WaveNode" type="Node2D" parent="WaveFunction2D"]
 
