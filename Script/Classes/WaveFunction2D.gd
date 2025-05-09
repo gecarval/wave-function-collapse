@@ -33,125 +33,75 @@ func set_wave_node(pos: Vector2i, new_wave_node: WaveNode2D) -> bool:
 	return true
 
 
-func collapse():
-	return
-
-
 func west_connection(node: WaveNode2D) -> Array[Vector3i]:
-	var possible_nodes: Array[Vector3i]
-	var index: int
-	if node != null:
-		for wave_node in wave_node_array:
-			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 0))
-		for connection in possible_connections:
-			if node.is_valid_east_connection(connection):
-				index = 0
-				for possible_node in possible_nodes:
-					if get_wave_node(Vector2i(possible_node.x, possible_node.y)).is_valid_west_connection(connection):
-						possible_nodes[index].z = 1
-					index += 1
-	else:
-		for wave_node in wave_node_array:
-			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 1))
-	return possible_nodes
+	return get_possible_connections(node,
+		func(n, c): return n.is_valid_east_connection(c),
+		func(n, c): return n.is_valid_west_connection(c))
 
 
 func east_connection(node: WaveNode2D) -> Array[Vector3i]:
-	var possible_nodes: Array[Vector3i]
-	var index: int
-	if node != null:
-		for wave_node in wave_node_array:
-			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 0))
-		for connection in possible_connections:
-			if node.is_valid_west_connection(connection):
-				index = 0
-				for possible_node in possible_nodes:
-					if get_wave_node(Vector2i(possible_node.x, possible_node.y)).is_valid_east_connection(connection):
-						possible_nodes[index].z = 1
-					index += 1
-	else:
-		for wave_node in wave_node_array:
-			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 1))
-	return possible_nodes
+	return get_possible_connections(node,
+		func(n, c): return n.is_valid_west_connection(c),
+		func(n, c): return n.is_valid_east_connection(c))
 
 
 func north_connection(node: WaveNode2D) -> Array[Vector3i]:
-	var possible_nodes: Array[Vector3i]
-	var index: int
-	if node != null:
-		for wave_node in wave_node_array:
-			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 0))
-		for connection in possible_connections:
-			if node.is_valid_south_connection(connection):
-				index = 0
-				for possible_node in possible_nodes:
-					if get_wave_node(Vector2i(possible_node.x, possible_node.y)).is_valid_north_connection(connection):
-						possible_nodes[index].z = 1
-					index += 1
-	else:
-		for wave_node in wave_node_array:
-			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 1))
-	return possible_nodes
+	return get_possible_connections(node,
+		func(n, c): return n.is_valid_south_connection(c),
+		func(n, c): return n.is_valid_north_connection(c))
 
 
 func south_connection(node: WaveNode2D) -> Array[Vector3i]:
-	var possible_nodes: Array[Vector3i]
-	var index: int
+	return get_possible_connections(node,
+		func(n, c): return n.is_valid_north_connection(c),
+		func(n, c): return n.is_valid_south_connection(c))
+
+
+func get_possible_connections(
+		node: WaveNode2D, is_valid_connection_func: Callable,
+		is_valid_opposite_func: Callable
+) -> Array[Vector3i]:
+	var possible_nodes: Array[Vector3i] = []
 	if node != null:
+		# Initialize possible nodes with z=0
 		for wave_node in wave_node_array:
 			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 0))
+		# Check connections and update z-values
 		for connection in possible_connections:
-			if node.is_valid_north_connection(connection):
-				index = 0
-				for possible_node in possible_nodes:
-					if get_wave_node(Vector2i(possible_node.x, possible_node.y)).is_valid_south_connection(connection):
-						possible_nodes[index].z = 1
-					index += 1
+			if is_valid_connection_func.call(node, connection):
+				for i in range(possible_nodes.size()):
+					var possible_node = get_wave_node(Vector2i(possible_nodes[i].x, possible_nodes[i].y))
+					if is_valid_opposite_func.call(possible_node, connection):
+						possible_nodes[i].z = 1
 	else:
+		# If no node, all nodes are possible (z=1)
 		for wave_node in wave_node_array:
 			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 1))
 	return possible_nodes
 
 
 func get_collapsing_node(pos: Vector2i) -> WaveNode2D:
-	var possible_nodes_north: Array[Vector3i]
-	var possible_nodes_south: Array[Vector3i]
-	var possible_nodes_west: Array[Vector3i]
-	var possible_nodes_east: Array[Vector3i]
-	var final_nodes: Array[Vector2i]
-	var atlas_coords: Vector2i
-	atlas_coords = tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x - 1, pos.y))
-	possible_nodes_west = west_connection(get_wave_node(atlas_coords))
-	atlas_coords = tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x, pos.y + 1))
-	possible_nodes_south = south_connection(get_wave_node(atlas_coords))
-	atlas_coords = tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x + 1, pos.y))
-	possible_nodes_east = east_connection(get_wave_node(atlas_coords))
-	atlas_coords = tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x, pos.y - 1))
-	possible_nodes_north = north_connection(get_wave_node(atlas_coords))
-	var check_error: int = 0
-	for possible_node in possible_nodes_north:
-		check_error += possible_node.z
-	for possible_node in possible_nodes_south:
-		check_error += possible_node.z
-	for possible_node in possible_nodes_east:
-		check_error += possible_node.z
-	for possible_node in possible_nodes_west:
-		check_error += possible_node.z
-	if check_error == 0:
+	# Get possible nodes for each direction
+	var possible_nodes_north: Array[Vector3i] = north_connection(get_wave_node(tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x, pos.y - 1))))
+	var possible_nodes_south: Array[Vector3i] = south_connection(get_wave_node(tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x, pos.y + 1))))
+	var possible_nodes_west: Array[Vector3i] = west_connection(get_wave_node(tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x - 1, pos.y))))
+	var possible_nodes_east: Array[Vector3i] = east_connection(get_wave_node(tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x + 1, pos.y))))
+	
+	# Find nodes that satisfy all directions
+	var final_nodes: Array[Vector2i] = []
+	for i in range(wave_node_array.size()):
+		if (possible_nodes_west[i].z == 1 and
+			possible_nodes_east[i].z == 1 and
+			possible_nodes_north[i].z == 1 and
+			possible_nodes_south[i].z == 1):
+			final_nodes.append(wave_node_array[i].tile_coords)
+	
+	# Return null if no valid nodes found
+	if final_nodes.is_empty():
 		return null
-	var index: int = 0
-	for wave_node in wave_node_array:
-		if (
-			possible_nodes_west[index].z == 1 and
-			possible_nodes_east[index].z == 1 and
-			possible_nodes_north[index].z == 1 and
-			possible_nodes_south[index].z == 1
-		):
-			final_nodes.append(wave_node_array[index].tile_coords)
-		index += 1
-	var result: Vector2i
-	if final_nodes != []:
-		result = final_nodes[randi() % final_nodes.size()]
+	
+	# Randomly select a final node
+	var result: Vector2i = final_nodes[randi() % final_nodes.size()]
 	return get_wave_node(result)
 
 
@@ -166,23 +116,21 @@ func select_connection(pos: Vector2i) -> bool:
 	return true
 
 
-func propagate(pos: Vector2i) -> bool:
-	if abs(pos.x) > map_size.x or abs(pos.y) > map_size.y:
-		return false
-	if select_connection(pos) == true:
-		if propagate(Vector2i(pos.x - 1, pos.y)):
-			propagate(pos)
-			return true
-		if propagate(Vector2i(pos.x, pos.y + 1)):
-			propagate(pos)
-			return true
-		if propagate(Vector2i(pos.x + 1, pos.y)):
-			propagate(pos)
-			return true
-		if propagate(Vector2i(pos.x, pos.y - 1)):
-			propagate(pos)
-			return true
-	return false
+func propagate(pos: Vector2i) -> void:
+	var stack: Array[Vector2i] = [pos]
+	while not stack.is_empty():
+		var current: Vector2i = stack.pop_back()
+		if abs(current.x) > map_size.x or abs(current.y) > map_size.y:
+			continue
+		if select_connection(current):
+			stack.push_back(Vector2i(current.x - 1, current.y))
+			stack.push_back(Vector2i(current.x, current.y + 1))
+			stack.push_back(Vector2i(current.x + 1, current.y))
+			stack.push_back(Vector2i(current.x, current.y - 1))
+
+
+func collapse():
+	return
 
 
 func _ready() -> void:
