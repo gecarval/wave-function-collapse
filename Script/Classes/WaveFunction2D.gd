@@ -5,16 +5,29 @@ class_name WaveFunction2D extends Node2D
 @export var alternative_tile: int = 0
 @export var tile_map_layer: TileMapLayer
 @export var map_size: Vector2i = Vector2i(32, 32)
-@export var wave_node_array: Array[WaveNode2D]
-@export var possible_connections: Array[int]
+@export var wave_node_cluster: Node2D
+var wave_node_array: Array[WaveNode2D]
+var possible_connections: Array[int]
 
 
-func _init(
-		wave_node_array_list: Array[WaveNode2D] = [null],
-		new_source_id: int = -1
-) -> void:
-	source_id = new_source_id
-	wave_node_array = wave_node_array_list
+func generate_wave_nodes() -> void:
+	if wave_node_cluster != null:
+		var children: Array[Node] = wave_node_cluster.get_children()
+		var unique_connections: Dictionary = {}
+		for child in children:
+			if child is WaveNode2D:
+				wave_node_array.append(child)
+				for valid_connection in [
+					child.valid_south_connection,
+					child.valid_north_connection,
+					child.valid_west_connection,
+					child.valid_east_connection
+				]:
+					for connection in valid_connection:
+						if connection not in unique_connections:
+							unique_connections[connection] = true
+							possible_connections.append(connection)
+	possible_connections.sort()
 
 
 func get_wave_node(pos: Vector2i) -> WaveNode2D:
@@ -66,27 +79,61 @@ func get_possible_connections(
 	if node != null:
 		# Initialize possible nodes with z=0
 		for wave_node in wave_node_array:
-			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 0))
+			var possible_node_pos: Vector3i = Vector3i(
+					wave_node.tile_coords.x,
+					wave_node.tile_coords.y,
+					0
+			)
+			possible_nodes.append(possible_node_pos)
 		# Check connections and update z-values
 		for connection in possible_connections:
 			if is_valid_connection_func.call(node, connection):
 				for i in range(possible_nodes.size()):
-					var possible_node = get_wave_node(Vector2i(possible_nodes[i].x, possible_nodes[i].y))
+					var node_pos: Vector2i = Vector2i(
+							possible_nodes[i].x,
+							possible_nodes[i].y
+					)
+					var possible_node = get_wave_node(node_pos)
 					if is_valid_opposite_func.call(possible_node, connection):
 						possible_nodes[i].z = 1
 	else:
 		# If no node, all nodes are possible (z=1)
 		for wave_node in wave_node_array:
-			possible_nodes.append(Vector3i(wave_node.tile_coords.x, wave_node.tile_coords.y, 1))
+			var possible_node_pos: Vector3i = Vector3i(
+					wave_node.tile_coords.x,
+					wave_node.tile_coords.y,
+					1
+			)
+			possible_nodes.append(possible_node_pos)
 	return possible_nodes
 
 
 func get_collapsing_node(pos: Vector2i) -> WaveNode2D:
 	# Get possible nodes for each direction
-	var possible_nodes_north: Array[Vector3i] = north_connection(get_wave_node(tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x, pos.y - 1))))
-	var possible_nodes_south: Array[Vector3i] = south_connection(get_wave_node(tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x, pos.y + 1))))
-	var possible_nodes_west: Array[Vector3i] = west_connection(get_wave_node(tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x - 1, pos.y))))
-	var possible_nodes_east: Array[Vector3i] = east_connection(get_wave_node(tile_map_layer.get_cell_atlas_coords(Vector2i(pos.x + 1, pos.y))))
+	var possible_nodes_north: Array[Vector3i]
+	var possible_nodes_south: Array[Vector3i]
+	var possible_nodes_west: Array[Vector3i]
+	var possible_nodes_east: Array[Vector3i]
+	
+	var north_pos: Vector2i = Vector2i(pos.x, pos.y - 1)
+	var south_pos: Vector2i = Vector2i(pos.x, pos.y + 1)
+	var west_pos: Vector2i = Vector2i(pos.x - 1, pos.y)
+	var east_pos: Vector2i = Vector2i(pos.x + 1, pos.y)
+	
+	var north_atlas_coords: Vector2i = tile_map_layer.get_cell_atlas_coords(north_pos)
+	var south_atlas_coords: Vector2i = tile_map_layer.get_cell_atlas_coords(south_pos)
+	var west_atlas_coords: Vector2i = tile_map_layer.get_cell_atlas_coords(west_pos)
+	var east_atlas_coords: Vector2i = tile_map_layer.get_cell_atlas_coords(east_pos)
+	
+	var north_node: WaveNode2D = get_wave_node(north_atlas_coords)
+	var south_node: WaveNode2D = get_wave_node(south_atlas_coords)
+	var west_node: WaveNode2D = get_wave_node(west_atlas_coords)
+	var east_node: WaveNode2D = get_wave_node(east_atlas_coords)
+	
+	possible_nodes_north = north_connection(north_node)
+	possible_nodes_south = south_connection(south_node)
+	possible_nodes_west = west_connection(west_node)
+	possible_nodes_east = east_connection(east_node)
 	
 	# Find nodes that satisfy all directions
 	var final_nodes: Array[Vector2i] = []
@@ -102,8 +149,20 @@ func get_collapsing_node(pos: Vector2i) -> WaveNode2D:
 		return null
 	
 	# Randomly select a final node
-	var result: Vector2i = final_nodes[randi() % final_nodes.size()]
-	return get_wave_node(result)
+	var total_weight: float = 0.0
+	for node_coords in final_nodes:
+		var node = get_wave_node(node_coords)
+		total_weight += node.spawn_weight
+
+	var random_value: float = randf() * total_weight
+	var cumulative_weight: float = 0.0
+	for node_coords in final_nodes:
+		var node = get_wave_node(node_coords)
+		cumulative_weight += node.spawn_weight
+		if random_value < cumulative_weight:
+			return node
+	# Fallback in case of rounding errors
+	return null
 
 
 func select_connection(pos: Vector2i) -> bool:
@@ -113,7 +172,7 @@ func select_connection(pos: Vector2i) -> bool:
 	setter_node = get_collapsing_node(pos)
 	if setter_node == null:
 		return false
-	tile_map_layer.set_cell(pos, 0, setter_node.tile_coords, 0)
+	tile_map_layer.set_cell(pos, source_id, setter_node.tile_coords, alternative_tile)
 	return true
 
 
@@ -131,9 +190,9 @@ func propagate(pos: Vector2i) -> void:
 
 
 func collapse():
-	return
+	propagate(Vector2i(0, 1))
 
 
 func _ready() -> void:
-	tile_map_layer.set_cell(Vector2i.ZERO, 0, Vector2i(4, 2), 0)
-	propagate(Vector2i(0, 1))
+	generate_wave_nodes()
+	collapse()

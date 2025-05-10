@@ -41,11 +41,10 @@ sources/0 = SubResource("TileSetAtlasSource_p5pve")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
-[node name="WaveFunction2D" type="Node2D" parent="." node_paths=PackedStringArray("tile_map_layer", "wave_node_array")]
+[node name="WaveFunction2D" type="Node2D" parent="." node_paths=PackedStringArray("tile_map_layer", "wave_node_cluster")]
 script = ExtResource("3_e0an3")
 tile_map_layer = NodePath("TileMapLayer")
-wave_node_array = [NodePath("WaveNode/Ground"), NodePath("WaveNode/HorizontalStreet"), NodePath("WaveNode/Curve"), NodePath("WaveNode/VerticalStreet")]
-possible_connections = Array[int]([0, 1])
+wave_node_cluster = NodePath("WaveNode")
 metadata/_custom_type_script = "uid://cjqx1o2nxh7cq"
 
 [node name="TileMapLayer" type="TileMapLayer" parent="WaveFunction2D"]
@@ -56,6 +55,7 @@ tile_set = SubResource("TileSet_urblq")
 [node name="Ground" type="Node2D" parent="WaveFunction2D/WaveNode"]
 script = ExtResource("4_p5pve")
 tile_coords = Vector2i(4, 2)
+spawn_weight = 100
 valid_north_connection = Array[int]([0])
 valid_south_connection = Array[int]([0])
 valid_west_connection = Array[int]([0])
@@ -71,15 +71,6 @@ valid_west_connection = Array[int]([1])
 valid_east_connection = Array[int]([1])
 metadata/_custom_type_script = "uid://bkj67xypp8cq1"
 
-[node name="Curve" type="Node2D" parent="WaveFunction2D/WaveNode"]
-script = ExtResource("4_p5pve")
-tile_coords = Vector2i(2, 0)
-valid_north_connection = Array[int]([0])
-valid_south_connection = Array[int]([1])
-valid_west_connection = Array[int]([1])
-valid_east_connection = Array[int]([0])
-metadata/_custom_type_script = "uid://bkj67xypp8cq1"
-
 [node name="VerticalStreet" type="Node2D" parent="WaveFunction2D/WaveNode"]
 script = ExtResource("4_p5pve")
 tile_coords = Vector2i(2, 1)
@@ -89,18 +80,46 @@ valid_west_connection = Array[int]([0])
 valid_east_connection = Array[int]([0])
 metadata/_custom_type_script = "uid://bkj67xypp8cq1"
 
-[node name="WaveNode2D" type="Node2D" parent="WaveFunction2D/WaveNode"]
+[node name="WSCurve" type="Node2D" parent="WaveFunction2D/WaveNode"]
 script = ExtResource("4_p5pve")
+tile_coords = Vector2i(2, 0)
+valid_north_connection = Array[int]([0])
+valid_south_connection = Array[int]([1])
+valid_west_connection = Array[int]([1])
+valid_east_connection = Array[int]([0])
 metadata/_custom_type_script = "uid://bkj67xypp8cq1"
 
-[node name="WaveNode2D2" type="Node2D" parent="WaveFunction2D/WaveNode"]
+[node name="ESCurve" type="Node2D" parent="WaveFunction2D/WaveNode"]
 script = ExtResource("4_p5pve")
+valid_north_connection = Array[int]([0])
+valid_south_connection = Array[int]([1])
+valid_west_connection = Array[int]([0])
+valid_east_connection = Array[int]([1])
 metadata/_custom_type_script = "uid://bkj67xypp8cq1"
 
-[node name="WaveNode2D3" type="Node2D" parent="WaveFunction2D/WaveNode"]
+[node name="WNCurve" type="Node2D" parent="WaveFunction2D/WaveNode"]
 script = ExtResource("4_p5pve")
+tile_coords = Vector2i(2, 2)
+valid_north_connection = Array[int]([1])
+valid_south_connection = Array[int]([0])
+valid_west_connection = Array[int]([1])
+valid_east_connection = Array[int]([0])
 metadata/_custom_type_script = "uid://bkj67xypp8cq1"
 
-[node name="WaveNode2D4" type="Node2D" parent="WaveFunction2D/WaveNode"]
+[node name="ENCurve" type="Node2D" parent="WaveFunction2D/WaveNode"]
 script = ExtResource("4_p5pve")
+tile_coords = Vector2i(0, 2)
+valid_north_connection = Array[int]([1])
+valid_south_connection = Array[int]([0])
+valid_west_connection = Array[int]([0])
+valid_east_connection = Array[int]([1])
+metadata/_custom_type_script = "uid://bkj67xypp8cq1"
+
+[node name="Cross" type="Node2D" parent="WaveFunction2D/WaveNode"]
+script = ExtResource("4_p5pve")
+tile_coords = Vector2i(1, 1)
+valid_north_connection = Array[int]([1])
+valid_south_connection = Array[int]([1])
+valid_west_connection = Array[int]([1])
+valid_east_connection = Array[int]([1])
 metadata/_custom_type_script = "uid://bkj67xypp8cq1"

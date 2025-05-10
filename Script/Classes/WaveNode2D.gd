@@ -2,6 +2,7 @@ class_name WaveNode2D extends Node2D
 
 
 @export var tile_coords: Vector2i
+@export var spawn_weight: int = 1
 @export var valid_north_connection: Array[int]
 @export var valid_south_connection: Array[int]
 @export var valid_west_connection: Array[int]
