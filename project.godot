@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Wave Function Collapse"
-run/main_scene="uid://du1c8m8dhr4ep"
+run/main_scene="uid://bxwr3mfdsak5l"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
