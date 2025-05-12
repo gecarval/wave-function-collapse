@@ -103,11 +103,12 @@ sources/2 = SubResource("TileSetAtlasSource_iw27f")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
-[node name="WaveFunction2D" type="Node2D" parent="." node_paths=PackedStringArray("tile_map_layer", "wave_node_cluster")]
+[node name="WaveFunction2D" type="Node2D" parent="." node_paths=PackedStringArray("tile_map_layer", "wave_node_cluster", "label")]
 script = ExtResource("3_e0an3")
 source_id = 2
 tile_map_layer = NodePath("TileMapLayer")
 wave_node_cluster = NodePath("WaveNode")
+label = NodePath("../Label")
 metadata/_custom_type_script = "uid://cjqx1o2nxh7cq"
 
 [node name="TileMapLayer" type="TileMapLayer" parent="WaveFunction2D"]
@@ -185,3 +186,10 @@ valid_south_connection = Array[int]([1])
 valid_west_connection = Array[int]([1])
 valid_east_connection = Array[int]([1])
 metadata/_custom_type_script = "uid://bkj67xypp8cq1"
+
+[node name="Label" type="Label" parent="."]
+offset_left = -559.0
+offset_top = -310.0
+offset_right = -519.0
+offset_bottom = -287.0
+text = "teste"
