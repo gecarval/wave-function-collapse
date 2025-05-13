@@ -198,7 +198,7 @@ func select_collapsing_node(pos: Vector2i) -> WaveNode2D:
 	return null
 
 
-func propagate(pos: Vector2i) -> void:
+func propagate(pos: Vector2i):
 	var stack: Array[Vector2i] = [pos]
 	while not stack.is_empty():
 		var current: Vector2i = stack.pop_back()
@@ -251,10 +251,18 @@ func collapse():
 		if label != null:
 			label.text = str(total_entropy)
 		# Step 4: Propagate constraints to neighbors
-		propagate(entropy_pos + Vector2i(0, -1))
-		propagate(entropy_pos + Vector2i(1, 0))
-		propagate(entropy_pos + Vector2i(0, 1))
-		propagate(entropy_pos + Vector2i(-1, 0))
+		var thread01: Thread = Thread.new()
+		var thread02: Thread = Thread.new()
+		var thread03: Thread = Thread.new()
+		var thread04: Thread = Thread.new()
+		thread01.start(propagate.bind(entropy_pos + Vector2i(0, -1)))
+		thread02.start(propagate.bind(entropy_pos + Vector2i(1, 0)))
+		thread03.start(propagate.bind(entropy_pos + Vector2i(0, 1)))
+		thread04.start(propagate.bind(entropy_pos + Vector2i(-1, 0)))
+		thread01.wait_to_finish()
+		thread02.wait_to_finish()
+		thread03.wait_to_finish()
+		thread04.wait_to_finish()
 
 
 func random_collapse() -> void:
@@ -305,10 +313,18 @@ func step_collapse() -> void:
 	if label != null:
 		label.text = str(total_entropy)
 	# Step 4: Propagate constraints to neighbors
-	propagate(entropy_pos + Vector2i(0, -1))
-	propagate(entropy_pos + Vector2i(1, 0))
-	propagate(entropy_pos + Vector2i(0, 1))
-	propagate(entropy_pos + Vector2i(-1, 0))
+	var thread01: Thread = Thread.new()
+	var thread02: Thread = Thread.new()
+	var thread03: Thread = Thread.new()
+	var thread04: Thread = Thread.new()
+	thread01.start(propagate.bind(entropy_pos + Vector2i(0, -1)))
+	thread02.start(propagate.bind(entropy_pos + Vector2i(1, 0)))
+	thread03.start(propagate.bind(entropy_pos + Vector2i(0, 1)))
+	thread04.start(propagate.bind(entropy_pos + Vector2i(-1, 0)))
+	thread01.wait_to_finish()
+	thread02.wait_to_finish()
+	thread03.wait_to_finish()
+	thread04.wait_to_finish()
 
 
 func _ready() -> void:
@@ -318,8 +334,10 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if Input.is_action_pressed("ui_accept"):
+	if Input.is_action_pressed("step"):
 		step_collapse()
-	if Input.is_action_just_pressed("ui_cancel"):
+	if Input.is_action_just_pressed("collapse"):
+		collapse()
+	if Input.is_action_just_pressed("clear"):
 		clear_tiles()
 		random_collapse()

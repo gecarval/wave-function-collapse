@@ -119,6 +119,7 @@ tile_set = SubResource("TileSet_urblq")
 [node name="Ground" type="Node2D" parent="WaveFunction2D/WaveNode"]
 script = ExtResource("5_urblq")
 tile_coords = Vector2i(4, 2)
+spawn_weight = 100.0
 valid_north_connection = Array[int]([0])
 valid_south_connection = Array[int]([0])
 valid_west_connection = Array[int]([0])
@@ -181,6 +182,7 @@ metadata/_custom_type_script = "uid://bkj67xypp8cq1"
 [node name="Cross" type="Node2D" parent="WaveFunction2D/WaveNode"]
 script = ExtResource("5_urblq")
 tile_coords = Vector2i(1, 1)
+spawn_weight = 1.0
 valid_north_connection = Array[int]([1])
 valid_south_connection = Array[int]([1])
 valid_west_connection = Array[int]([1])
