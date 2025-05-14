@@ -10,20 +10,7 @@ class_name WaveFunction2D extends Node2D
 var wave_node_array: Array[WaveNode2D]
 var tile_map_possibilities: Dictionary
 var possible_connections: Array[int]
-
-
-func initialize_tile_map_possibilities() -> void:
-	for x in range(-map_size.x, map_size.x + 1):
-		for y in range(-map_size.y, map_size.y + 1):
-			var coord: Vector2i = Vector2i(x, y)
-			var possibilities: Array[Vector2i] = []
-			for wave_node in wave_node_array:
-				var node_vec: Vector2i = Vector2i(
-					wave_node.tile_coords.x,
-					wave_node.tile_coords.y
-				)
-				possibilities.append(node_vec)
-			tile_map_possibilities[coord] = possibilities
+var switch: bool = false
 
 
 func generate_wave_nodes() -> void:
@@ -44,6 +31,24 @@ func generate_wave_nodes() -> void:
 							unique_connections[connection] = true
 							possible_connections.append(connection)
 	possible_connections.sort()
+
+
+func initialize_tile_map_possibilities() -> void:
+	for x in range(-map_size.x, map_size.x + 1):
+		for y in range(-map_size.y, map_size.y + 1):
+			var coord: Vector2i = Vector2i(x, y)
+			var possibilities: Array[Vector2i] = []
+			for wave_node in wave_node_array:
+				var node_vec: Vector2i = Vector2i(
+					wave_node.tile_coords.x,
+					wave_node.tile_coords.y
+				)
+				possibilities.append(node_vec)
+			tile_map_possibilities[coord] = possibilities
+
+
+func _init() -> void:
+	generate_wave_nodes()
 	initialize_tile_map_possibilities()
 
 
@@ -69,6 +74,24 @@ func set_wave_node(pos: Vector2i, new_wave_node: WaveNode2D) -> bool:
 		if pos == wave_node.tile_coords:
 			wave_node = new_wave_node
 	return true
+
+
+func select_collapsing_node(pos: Vector2i) -> WaveNode2D:
+	# Randomly select a final node
+	var total_weight: float = 0.0
+	for node_coords in tile_map_possibilities[pos]:
+		var node = get_wave_node(node_coords)
+		total_weight += node.spawn_weight
+
+	var random_value: float = randf() * total_weight
+	var cumulative_weight: float = 0.0
+	for node_coords in tile_map_possibilities[pos]:
+		var node = get_wave_node(node_coords)
+		cumulative_weight += node.spawn_weight
+		if random_value < cumulative_weight:
+			return node
+	# Fallback in case of rounding errors
+	return null
 
 
 func west_connection(new_node: WaveNode2D) -> Array[Vector3i]:
@@ -170,32 +193,11 @@ func get_collapsing_node(pos: Vector2i) -> bool:
 				possible_nodes_south[i].z == 1
 		):
 			final_nodes.append(wave_node_array[i].tile_coords)
-	
 	tile_map_possibilities[pos] = final_nodes
 	# Return false if no valid nodes found
 	if final_nodes.size() == tile_map_possibilities[pos].size():
 		return false
-	if final_nodes.is_empty():
-		return false
 	return true
-
-
-func select_collapsing_node(pos: Vector2i) -> WaveNode2D:
-	# Randomly select a final node
-	var total_weight: float = 0.0
-	for node_coords in tile_map_possibilities[pos]:
-		var node = get_wave_node(node_coords)
-		total_weight += node.spawn_weight
-
-	var random_value: float = randf() * total_weight
-	var cumulative_weight: float = 0.0
-	for node_coords in tile_map_possibilities[pos]:
-		var node = get_wave_node(node_coords)
-		cumulative_weight += node.spawn_weight
-		if random_value < cumulative_weight:
-			return node
-	# Fallback in case of rounding errors
-	return null
 
 
 func propagate(pos: Vector2i):
@@ -216,6 +218,7 @@ func propagate(pos: Vector2i):
 
 
 func collapse():
+	var time: float = Time.get_unix_time_from_system()
 	while true:
 		# Step 1: Find position with minimal entropy
 		var min_entropy: int = wave_node_array.size() + 1  # Larger than any possible size initially
@@ -249,33 +252,15 @@ func collapse():
 		tile_map_possibilities[entropy_pos].clear()
 		
 		if label != null:
-			label.text = str(total_entropy)
+			label.text = "Process Time:" + str(Time.get_unix_time_from_system() - time)
 		# Step 4: Propagate constraints to neighbors
-		var thread01: Thread = Thread.new()
-		var thread02: Thread = Thread.new()
-		var thread03: Thread = Thread.new()
-		var thread04: Thread = Thread.new()
-		thread01.start(propagate.bind(entropy_pos + Vector2i(0, -1)))
-		thread02.start(propagate.bind(entropy_pos + Vector2i(1, 0)))
-		thread03.start(propagate.bind(entropy_pos + Vector2i(0, 1)))
-		thread04.start(propagate.bind(entropy_pos + Vector2i(-1, 0)))
-		thread01.wait_to_finish()
-		thread02.wait_to_finish()
-		thread03.wait_to_finish()
-		thread04.wait_to_finish()
+		propagate(entropy_pos + Vector2i(0, -1))
+		propagate(entropy_pos + Vector2i(1, 0))
+		propagate(entropy_pos + Vector2i(0, 1))
+		propagate(entropy_pos + Vector2i(-1, 0))
 
 
-func random_collapse() -> void:
-	var random_pos: Vector2i = Vector2i(randi() % map_size.x, randi() % map_size.y)
-	tile_map_layer.set_cell(random_pos, source_id, Vector2i.ZERO, alternative_tile)
-	tile_map_possibilities[random_pos].clear()
-	propagate(random_pos + Vector2i(0, -1))
-	propagate(random_pos + Vector2i(1, 0))
-	propagate(random_pos + Vector2i(0, 1))
-	propagate(random_pos + Vector2i(-1, 0))
-
-
-func step_collapse() -> void:
+func step_collapse() -> bool:
 	# Step 1: Find position with minimal entropy
 	var min_entropy: int = wave_node_array.size() + 1  # Larger than any possible size initially
 	var entropy_pos: Vector2i = Vector2i.ZERO
@@ -291,51 +276,51 @@ func step_collapse() -> void:
 				min_entropy = pos_size
 				entropy_pos = pos
 				has_unset_tiles = true
-			elif pos_size == min_entropy and randi() % 2:
+			elif pos_size == min_entropy and randi() % 2 == 0:
 				min_entropy = pos_size
 				entropy_pos = pos
 	
 	# Step 2: Check termination conditions
 	if total_entropy == 0 or not has_unset_tiles:
 		print("Tilemap fully collapsed")
-		return
+		return true
 	
 	# Step 3: Select and set a tile
 	var setter_node: WaveNode2D = select_collapsing_node(entropy_pos)
 	if setter_node == null:
 		print("Contradiction at position ", entropy_pos, ": No valid tile available")
-		return  # Stop on contradiction; backtracking could be added here
+		return false  # Stop on contradiction; backtracking could be added here
 		
 	# Set the tile and clear possibilities
 	tile_map_layer.set_cell(entropy_pos, source_id, setter_node.tile_coords, alternative_tile)
 	tile_map_possibilities[entropy_pos].clear()
 	
 	if label != null:
-		label.text = str(total_entropy)
+		label.text = "Current Total Entropy: " + str(total_entropy)
 	# Step 4: Propagate constraints to neighbors
-	var thread01: Thread = Thread.new()
-	var thread02: Thread = Thread.new()
-	var thread03: Thread = Thread.new()
-	var thread04: Thread = Thread.new()
-	thread01.start(propagate.bind(entropy_pos + Vector2i(0, -1)))
-	thread02.start(propagate.bind(entropy_pos + Vector2i(1, 0)))
-	thread03.start(propagate.bind(entropy_pos + Vector2i(0, 1)))
-	thread04.start(propagate.bind(entropy_pos + Vector2i(-1, 0)))
-	thread01.wait_to_finish()
-	thread02.wait_to_finish()
-	thread03.wait_to_finish()
-	thread04.wait_to_finish()
+	propagate(entropy_pos + Vector2i(0, -1))
+	propagate(entropy_pos + Vector2i(1, 0))
+	propagate(entropy_pos + Vector2i(0, 1))
+	propagate(entropy_pos + Vector2i(-1, 0))
+	return false
 
 
-func _ready() -> void:
-	generate_wave_nodes()
-	initialize_tile_map_possibilities()
-	random_collapse()
+func random_collapse():
+	var random_pos: Vector2i = Vector2i(randi() % map_size.x, randi() % map_size.y)
+	tile_map_layer.set_cell(random_pos, source_id, Vector2i.ZERO, alternative_tile)
+	tile_map_possibilities[random_pos].clear()
+	propagate(random_pos + Vector2i(0, -1))
+	propagate(random_pos + Vector2i(1, 0))
+	propagate(random_pos + Vector2i(0, 1))
+	propagate(random_pos + Vector2i(-1, 0))
 
 
-func _process(_delta: float) -> void:
-	if Input.is_action_pressed("step"):
-		step_collapse()
+func process_control() -> void:
+	if Input.is_action_just_pressed("step"):
+		switch = not switch
+	if switch:
+		if (step_collapse()):
+			switch = false
 	if Input.is_action_just_pressed("collapse"):
 		collapse()
 	if Input.is_action_just_pressed("clear"):
